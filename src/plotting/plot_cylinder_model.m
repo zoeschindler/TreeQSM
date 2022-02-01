@@ -58,7 +58,9 @@ if nargin == 6
     Len = Len(Ind);
     Sta = Sta(Ind,:);
     Axe = Axe(Ind,:);
-    BOrd = BOrd(Ind);
+    if strcmp(Color,'order') % here
+        BOrd = BOrd(Ind);
+    end % here
     if strcmp(Color,'branch')
         Bran = Bran(Ind);
     end
