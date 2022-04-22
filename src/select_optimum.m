@@ -520,8 +520,12 @@ for i = 1:Nmod
         T = QSMs(i).cylinder.branch == 1;
         B1 = QSMs(i).cylinder.BranchOrder == 1;
         B2 = QSMs(i).cylinder.BranchOrder == 2;
+        % here >
         CylSurfCov(i,:) =  [mean(D)  mean(D(T))  mean(D(~T))  mean(D(B1)) ...
-            mean(D(B2)) min(D) min(D(T)) min(D(~T)) min(D(B1)) min(D(B2))];
+            mean(D(B2)) mean(min(D)) mean(min(D(T))) mean(min(D(~T))) ...
+            mean(min(D(B1))) mean(min(D(B2)))];
+        CylSurfCov(i,isnan(CylSurfCov(i,:))) = 0;
+        %  < here
         
         % Collect branch-order distributions:
         d = QSMs(i).treedata.VolBranchOrd;
