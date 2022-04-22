@@ -996,17 +996,23 @@ elseif strcmp(dist,'Azi')
 end
 
 BranchDist = zeros(8,n);
-for i = 1:n
-    I = Par >= (i-1)*a & Par < i*a;
-    BranchDist(1,i) = sum(BVol(I)); % volume (all branches)
-    BranchDist(2,i) = sum(BVol(I & BOrd == 1)); % volume (1st-branches)
-    BranchDist(3,i) = sum(BAre(I)); % area (all branches)
-    BranchDist(4,i) = sum(BAre(I & BOrd == 1)); % area (1st-branches)
-    BranchDist(5,i) = sum(BLen(I)); % length (all branches)
-    BranchDist(6,i) = sum(BLen(I & BOrd == 1)); % length (1st-branches)
-    BranchDist(7,i) = nnz(I); % number (all branches)
-    BranchDist(8,i) = nnz(I & BOrd == 1); % number (1st-branches)
+% here >
+if length(n) > 0
+% < here
+    for i = 1:n
+        I = Par >= (i-1)*a & Par < i*a;
+        BranchDist(1,i) = sum(BVol(I)); % volume (all branches)
+        BranchDist(2,i) = sum(BVol(I & BOrd == 1)); % volume (1st-branches)
+        BranchDist(3,i) = sum(BAre(I)); % area (all branches)
+        BranchDist(4,i) = sum(BAre(I & BOrd == 1)); % area (1st-branches)
+        BranchDist(5,i) = sum(BLen(I)); % length (all branches)
+        BranchDist(6,i) = sum(BLen(I & BOrd == 1)); % length (1st-branches)
+        BranchDist(7,i) = nnz(I); % number (all branches)
+        BranchDist(8,i) = nnz(I & BOrd == 1); % number (1st-branches)
+    end
+% here >
 end
+% < here
 treedata.(['VolBranch',dist]) = BranchDist(1,:);
 treedata.(['VolBranch1',dist]) = BranchDist(2,:);
 treedata.(['AreBranch',dist]) = BranchDist(3,:);
