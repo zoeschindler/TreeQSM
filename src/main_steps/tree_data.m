@@ -622,78 +622,93 @@ treedata.CrownAreaAlpha = shp.area;
 % alpha(0.1)
 
 %% Crown base
-% Define first major branch as the branch whose diameter > min(0.05*dbh,5cm)
-% and whose horizontal relative reach is more than the median reach of 1st-ord.
-% branches (or at maximum 10). The reach is defined as the horizontal
-% distance from the base to the tip divided by the dbh.
-dbh = treedata.DBHcyl;
-nb = nnz(branch.order == 1)+1;
-nc = size(Sta,1);
-ind = (1:1:nc)';
-HL = zeros(nb,1);
-NC = zeros(nb,1);
-for i = 2:nb
-    C = ind(cylinder.branch == i);
-    base = Sta(C(1),:);
-    C = C(end);
-    tip = Sta(C,:)+Len(C)*Axe(C);
-    V = tip(1:2)-base(1:2);
-    HL(i) = sqrt(V*V')/dbh*2;
-    NC(i) = nnz(branch.parent == i);
-end
-M = min(10,median(HL));
 
-% Sort the branches according to the their heights
-Hei = branch.height(1:nb);
-[Hei,SortOrd] = sort(Hei);
-
-d = min(0.05,0.05*dbh);
-if nb > 1
-    i = 1;
-    while i < nb
-        i = i+1;
-        if branch.diameter(SortOrd(i)) > d && HL(SortOrd(i)) > M
-            b = SortOrd(i);
-            i = nb+2;
+% here >
+if nnz(branch.order == 1) > 0
+% < here
+    
+    % Define first major branch as the branch whose diameter > min(0.05*dbh,5cm)
+    % and whose horizontal relative reach is more than the median reach of 1st-ord.
+    % branches (or at maximum 10). The reach is defined as the horizontal
+    % distance from the base to the tip divided by the dbh.
+    dbh = treedata.DBHcyl;
+    nb = nnz(branch.order == 1)+1;
+    nc = size(Sta,1);
+    ind = (1:1:nc)';
+    HL = zeros(nb,1);
+    NC = zeros(nb,1);
+    for i = 2:nb
+        C = ind(cylinder.branch == i);
+        base = Sta(C(1),:);
+        C = C(end);
+        tip = Sta(C,:)+Len(C)*Axe(C);
+        V = tip(1:2)-base(1:2);
+        HL(i) = sqrt(V*V')/dbh*2;
+        NC(i) = nnz(branch.parent == i);
+    end
+    M = min(10,median(HL));
+    
+    % Sort the branches according to the their heights
+    Hei = branch.height(1:nb);
+    [Hei,SortOrd] = sort(Hei);
+    
+    d = min(0.05,0.05*dbh);
+    if nb > 1
+        i = 1;
+        while i < nb
+            i = i+1;
+            if branch.diameter(SortOrd(i)) > d && HL(SortOrd(i)) > M
+                b = SortOrd(i);
+                i = nb+2;
+            end
+        end
+        if i == nb+1 && nb > 1
+            b = SortOrd(1);
         end
     end
-    if i == nb+1 && nb > 1
-        b = SortOrd(1);
+    %[branch.height(1:nb) branch.diameter(1:nb) branch.length(1:nb) HL NC]
+    
+    % search all the children of the first major branch:
+    nb = size(branch.parent,1);
+    Ind = (1:1:nb)';
+    chi = Ind(branch.parent == b);
+    B = b;
+    while ~isempty(chi)
+        B = [B; chi];
+        n = length(chi);
+        C = cell(n,1);
+        for i = 1:n
+            C{i} = Ind(branch.parent == chi(i));
+        end
+        chi = vertcat(C{:});
     end
-end
-%[branch.height(1:nb) branch.diameter(1:nb) branch.length(1:nb) HL NC]
-
-% search all the children of the first major branch:
-nb = size(branch.parent,1);
-Ind = (1:1:nb)';
-chi = Ind(branch.parent == b);
-B = b;
-while ~isempty(chi)
-    B = [B; chi];
-    n = length(chi);
-    C = cell(n,1);
-    for i = 1:n
-        C{i} = Ind(branch.parent == chi(i));
+    
+    % define crown base height from the ground:
+    BaseHeight = max(Sta(:,3)); % Height of the crown base
+    for i = 1:length(B)
+        C = ind(cylinder.branch == B(i));
+        ht = min(Tip(C,3));
+        hb = min(Sta(C,3));
+        h = min(hb,ht);
+        if h < BaseHeight
+           BaseHeight = h; 
+        end
     end
-    chi = vertcat(C{:});
-end
+    treedata.CrownBaseHeight = BaseHeight-Sta(1,3);
+    
+    %% Crown length and ratio
+    treedata.CrownLength = treedata.TreeHeight-treedata.CrownBaseHeight;
+    treedata.CrownRatio = treedata.CrownLength/treedata.TreeHeight;
 
-% define crown base height from the ground:
-BaseHeight = max(Sta(:,3)); % Height of the crown base
-for i = 1:length(B)
-    C = ind(cylinder.branch == B(i));
-    ht = min(Tip(C,3));
-    hb = min(Sta(C,3));
-    h = min(hb,ht);
-    if h < BaseHeight
-       BaseHeight = h; 
-    end
+% here >
+else
+    % set values if there are no branches
+    BaseHeight = treedata.TreeHeight+Sta(1,3);
+    treedata.CrownBaseHeight = treedata.TreeHeight;
+    treedata.CrownLength = 0;
+    treedata.CrownRatio = 0;
 end
-treedata.CrownBaseHeight = BaseHeight-Sta(1,3);
-
-%% Crown length and ratio
-treedata.CrownLength = treedata.TreeHeight-treedata.CrownBaseHeight;
-treedata.CrownRatio = treedata.CrownLength/treedata.TreeHeight;
+% < here
 
 %% Crown volume from convex hull and alpha shape:
 I = P(:,3) >= BaseHeight;
